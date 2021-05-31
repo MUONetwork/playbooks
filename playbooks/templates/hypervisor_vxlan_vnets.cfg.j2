@@ -1,0 +1,7 @@
+{% for vnet in pve_vnets %}
+vnet: {{ vnet.name }}
+      zone {{ vnet.zone }}
+      alias {{ vnet.alias | default("{{ vnet.name }}") }}
+      tag {{ vnet.tag }}
+
+{% endfor %}

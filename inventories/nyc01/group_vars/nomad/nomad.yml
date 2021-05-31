@@ -1,0 +1,92 @@
+---
+
+# Contains all the vars for installing nomad (and consul executable as its dependency for connect)
+
+linux_architecture_map:
+  amd64: amd64
+  x86_64: amd64
+  armv7l: arm
+  aarch64: arm64
+  32-bit: "386"
+  64-bit: amd64
+
+##############
+## Consul config
+##############
+consul_version: "{{ lookup('env','CONSUL_VERSION') | default('1.8.7', true) }}"
+consul_architecture: "{{ linux_architecture_map[ansible_architecture] }}"
+consul_pkg: "consul{% if consul_enterprise %}-enterprise{% else %}{%endif%}_{{ consul_version }}_{{ ansible_system | lower }}_{{ consul_architecture }}.zip"
+consul_zip_url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_{{ ansible_system | lower }}_{{ consul_architecture }}.zip"
+consul_checksum_file_url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version}}_SHA256SUMS"
+consul_config_path: "/etc/consul"
+consul_configd_path: "{{ consul_config_path }}/consul.d"
+consul_data_path: "/var/consul"
+consul_run_path: "/run/consul"
+consul_bin_path: "/usr/local/bin"
+consul_log_path: "{{ lookup('env','CONSUL_LOG_PATH') | default('/var/log/consul', true) }}"
+consul_log_file: "{{ lookup('env','CONSUL_LOG_FILE') | default('consul.log', true) }}"
+consul_binary: "{{ consul_bin_path }}/consul"
+consul_install_upgrade: true
+consul_user: "{{ nomad_user }}"
+consul_group: "{{ nomad_group }}"
+consul_enterprise: false
+
+##############
+## CNI Plugin
+##############
+cni_version: 0.9.0
+cni_tgz_url: "https://github.com/containernetworking/plugins/releases/download/v0.9.0/cni-plugins-linux-{{ linux_architecture_map[ansible_architecture] }}-v0.9.0.tgz"
+cni_path: "/opt/cni/bin"
+
+##############
+## Nomad config
+##############
+nomad_version: 1.0.4
+nomad_allow_purge_config: true
+
+nomad_manage_user: true
+nomad_user: "root"
+nomad_manage_group: false
+nomad_group: "bin"
+
+nomad_syslog_enable: true
+nomad_leave_on_terminate: true
+#nomad_bind_address: 0.0.0.0
+nomad_iface: eth0
+nomad_ports_http: 4646
+nomad_ports_rpc: 4647
+nomad_ports_serf: 4648
+
+nomad_datacenter: "dc1"
+nomad_region: "global"
+nomad_group_name: "nomad"
+nomad_node_role: "both"
+
+### ACLs
+nomad_acl_enabled: "{{ lookup('env', 'NOMAD_ACL_ENABLED') | default('true', true) }}"
+nomad_acl_token_ttl: "30s"
+nomad_acl_policy_ttl: "30s"
+nomad_acl_replication_token: ""
+
+nomad_encrypt_enable: true
+# base64 encoded (No longer needed)
+# nomad_encrypt: U3VwM3JTZWNSRVRuY3J5UHRpMG5rM1kK
+
+nomad_node_gc_threshold: "6h"
+nomad_job_gc_threshold: "1h"
+nomad_eval_gc_threshold: "30m"
+nomad_deployment_gc_threshold: "30m"
+
+# our hosts are already configured with docker and nomad user is root
+nomad_docker_enable: false
+
+# Autopilot
+nomad_raft_protocol: 2
+nomad_autopilot: true
+nomad_autopilot_cleanup_dead_servers: true
+nomad_autopilot_last_contact_threshold: "200ms"
+nomad_autopilot_max_trailing_logs: 250
+nomad_autopilot_server_stabilization_time: "10s"
+
+# Consul config
+nomad_use_consul: true

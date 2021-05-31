@@ -1,0 +1,52 @@
+---
+
+- hosts: nomad
+  become: true
+  remote_user: administrator
+  gather_facts: true
+  pre_tasks:
+    - name: update cache
+      apt:
+        update_cache: yes
+
+    - name: Install ansible roles
+      command: "ansible-galaxy install -r {{ playbook_dir }}/requirements.yml --roles-path {{ playbook_dir }}/roles"
+      delegate_to: '127.0.0.1'
+      become: false
+
+  tasks:
+    - name: Install Consul (required for connect)
+      include: tasks/install-consul.yml
+
+    - name: Setup CNI plugins
+      block:
+        - name: Create dir for cni
+          file:
+            path: "{{ cni_path }}"
+            recurse: true
+
+        - name: Get CNI plugins
+          unarchive:
+            src: "{{ cni_tgz_url }}"
+            dest: "{{ cni_path }}"
+            remote_src: true
+
+        - name: Allow container traffic through the bridge network to be routed via iptables
+          sysctl:
+            name: "{{ item }}"
+            value: '1'
+            state: present
+          loop:
+            - net.bridge.bridge-nf-call-arptables
+            - net.bridge.bridge-nf-call-ip6tables
+            - net.bridge.bridge-nf-call-iptables
+
+    - name: Install Nomad
+      include_role:
+        name: ansible-nomad
+
+    - name: Start nomad
+      service:
+        name: nomad
+        state: started
+        enabled: yes

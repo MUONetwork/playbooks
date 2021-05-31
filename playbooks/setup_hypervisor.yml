@@ -1,0 +1,169 @@
+---
+
+- hosts: hypervisors
+  gather_facts: true
+  pre_tasks:
+    - name: Install ansible roles
+      command: "ansible-galaxy install -r {{ playbook_dir }}/requirements.yml --roles-path {{ playbook_dir }}/roles"
+      delegate_to: '127.0.0.1'
+      changed_when: false
+      become: false
+
+  tasks:
+    - name: Ensure gpg is installed
+      apt:
+        name: gpg
+        state: present
+        update_cache: false
+
+    - name: Trust Proxmox packaging key
+      apt_key:
+        data: "{{ lookup('file', 'proxmox6-packaging-key.asc') }}"
+        id: "{{ pve_release_key_id }}"
+        state: present
+
+    - name: Add proxmox repo
+      apt_repository:
+        repo: "{{ pve_repository }}"
+        filename: proxmox
+        state: present
+        update_cache: false
+
+    - name: Remove automatically installed PVE Enterprise repo configuration
+      apt_repository:
+        repo: "{{ item }}"
+        filename: pve-enterprise
+        state: absent
+        update_cache: false
+      with_items:
+        - "deb https://enterprise.proxmox.com/debian {{ ansible_distribution_release }} pve-enterprise"
+        - "deb https://enterprise.proxmox.com/debian/pve {{ ansible_distribution_release }} pve-enterprise"
+
+    - name: Update apt cache
+      apt:
+        update_cache: true
+
+    - name: Remove proxox's nagging from the webUI (I wish I could buy the license)
+      block:
+        - name: Get pveversion for backup filename
+          shell: "pveversion | awk -F / '{print $2}'"
+          register: pveversion
+          check_mode: false
+          changed_when: false
+
+        - name: check if backup file exists
+          stat:
+            path: "/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js.bak-{{ pveversion.stdout }}"
+          register: file_result
+
+        - name: make a backup of original file
+          copy:
+            remote_src: True
+            src: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+            dest: "/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js.bak-{{ pveversion.stdout }}"
+          when: not file_result.stat.exists
+
+        - name: Modify line in file to remove nag message
+          shell:
+            cmd: |
+              sed -i.orig "s/data.status.toLowerCase() !== 'active'/false/g" /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+          notify: restart pveproxy
+          when: not file_result.stat.exists
+
+        - name: Flush all handlers
+          meta: flush_handlers
+      tags:
+        - nonag
+
+    - name: Setup NTP
+      include_role:
+        name: geerlingguy.ntp
+
+    - name: Setup Proxmox clustering
+      include_role:
+        name: lae.proxmox
+
+    - name: Install SDN dependencies
+      apt:
+        name: "{{ sdn_dependencies }}"
+        state: present
+
+    - name: Source all network interfaces
+      block:
+        - name: Check if all network interfaces will be sourced
+          lineinfile:
+            state: absent
+            path: /etc/network/interfaces
+            regexp: "^source /etc/network/interfaces.d/*$"
+          check_mode: true
+          changed_when: false
+          register: check
+
+        - name: Source all network interfaces if not configured to already
+          lineinfile:
+            state: present
+            path: /etc/network/interfaces
+            line: "source /etc/network/interfaces.d/*"
+          when: check.found == 0
+      tags:
+        - sdn
+
+    - name: Setup SDN networks
+      block:
+        # Creating empty zone and vnets is necessary else we get error when copying template
+        - name: Create an empty zone file (if required)
+          block:
+            - stat:
+                path: /etc/pve/sdn/zones.cfg
+              register: zone_file
+            - file:
+                path: /etc/pve/sdn/zones.cfg
+                state: touch
+                owner: root
+                group: www-data
+              when:
+                - zone_file.stat.exists is defined
+                - not zone_file.stat.exists
+        - name: Create an empty vnets file (if required)
+          block:
+            - stat:
+                path: /etc/pve/sdn/vnets.cfg
+              register: vnets_file
+            - file:
+                path: /etc/pve/sdn/vnets.cfg
+                state: touch
+                owner: root
+                group: www-data
+              when:
+                - vnets_file.stat.exists is defined
+                - not vnets_file.stat.exists
+
+        - name: Generate Zones
+          template:
+            src: "{{ playbook_dir }}/templates/hypervisor_vxlan_zones.cfg.j2"
+            dest: "/etc/pve/sdn/zones.cfg"
+            owner: root
+            group: www-data
+          register: zone_template
+
+        - name: Generate VNets
+          template:
+            src: "{{ playbook_dir }}/templates/hypervisor_vxlan_vnets.cfg.j2"
+            dest: "/etc/pve/sdn/vnets.cfg"
+            owner: root
+            group: www-data
+          register: vnet_template
+
+        - name: Apply SDN config
+          command: "pvesh set /cluster/sdn"
+          when: zone_template.changed or vnet_template.changed
+      when:
+        - "inventory_hostname == groups[pve_group][0]"
+      tags:
+        - sdn
+
+  handlers:
+    - name: restart pveproxy
+      service:
+        name: pveproxy
+        state: restarted
