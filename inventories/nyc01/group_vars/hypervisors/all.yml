@@ -39,17 +39,17 @@ pve_vxlan_zones:
   - name: myvxlan1
     peers: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
     ipam: pve
-    mtu: 1450 # we need to leave 50 bytes for vxlan header
+    mtu: 1450  # we need to leave 50 bytes for vxlan header
     nodes: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_hostname']) | join(',') }}"
   - name: myvxlan2
     peers: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
     ipam: pve
-    mtu: 1450 # we need to leave 50 bytes for vxlan header
+    mtu: 1450  # we need to leave 50 bytes for vxlan header
     nodes: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_hostname']) | join(',') }}"
   - name: myvxlan3
     peers: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
     ipam: pve
-    mtu: 1450 # we need to leave 50 bytes for vxlan header
+    mtu: 1450  # we need to leave 50 bytes for vxlan header
     nodes: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_hostname']) | join(',') }}"
 
 pve_vnets:

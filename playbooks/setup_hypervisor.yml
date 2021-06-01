@@ -58,7 +58,7 @@
 
         - name: make a backup of original file
           copy:
-            remote_src: True
+            remote_src: true
             src: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
             dest: "/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js.bak-{{ pveversion.stdout }}"
           when: not file_result.stat.exists
@@ -66,7 +66,7 @@
         - name: Modify line in file to remove nag message
           shell:
             cmd: |
-              sed -i.orig "s/data.status.toLowerCase() !== 'active'/false/g" /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+              sed -i.orig "s/data.status.toLowerCase() !== 'active'/false/g" /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js  # noqa line-length
           notify: restart pveproxy
           when: not file_result.stat.exists
 
@@ -142,6 +142,7 @@
           template:
             src: "{{ playbook_dir }}/templates/hypervisor_vxlan_zones.cfg.j2"
             dest: "/etc/pve/sdn/zones.cfg"
+            mode: 0640
             owner: root
             group: www-data
           register: zone_template
@@ -150,6 +151,7 @@
           template:
             src: "{{ playbook_dir }}/templates/hypervisor_vxlan_vnets.cfg.j2"
             dest: "/etc/pve/sdn/vnets.cfg"
+            mode: 0640
             owner: root
             group: www-data
           register: vnet_template

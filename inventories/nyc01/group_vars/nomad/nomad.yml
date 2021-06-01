@@ -15,9 +15,9 @@ linux_architecture_map:
 ##############
 consul_version: "{{ lookup('env','CONSUL_VERSION') | default('1.8.7', true) }}"
 consul_architecture: "{{ linux_architecture_map[ansible_architecture] }}"
-consul_pkg: "consul{% if consul_enterprise %}-enterprise{% else %}{%endif%}_{{ consul_version }}_{{ ansible_system | lower }}_{{ consul_architecture }}.zip"
-consul_zip_url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_{{ ansible_system | lower }}_{{ consul_architecture }}.zip"
-consul_checksum_file_url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version}}_SHA256SUMS"
+consul_pkg: "consul{% if consul_enterprise %}-enterprise{% else %}{%endif%}_{{ consul_version }}_{{ ansible_system | lower }}_{{ consul_architecture }}.zip"  # noqa line-length
+consul_zip_url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_{{ ansible_system | lower }}_{{ consul_architecture }}.zip"  # noqa line-length
+consul_checksum_file_url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version}}_SHA256SUMS"  # noqa line-length
 consul_config_path: "/etc/consul"
 consul_configd_path: "{{ consul_config_path }}/consul.d"
 consul_data_path: "/var/consul"
@@ -35,7 +35,7 @@ consul_enterprise: false
 ## CNI Plugin
 ##############
 cni_version: 0.9.0
-cni_tgz_url: "https://github.com/containernetworking/plugins/releases/download/v0.9.0/cni-plugins-linux-{{ linux_architecture_map[ansible_architecture] }}-v0.9.0.tgz"
+cni_tgz_url: "https://github.com/containernetworking/plugins/releases/download/v0.9.0/cni-plugins-linux-{{ linux_architecture_map[ansible_architecture] }}-v0.9.0.tgz"  # noqa line-length
 cni_path: "/opt/cni/bin"
 
 ##############
@@ -51,7 +51,7 @@ nomad_group: "bin"
 
 nomad_syslog_enable: true
 nomad_leave_on_terminate: true
-#nomad_bind_address: 0.0.0.0
+# nomad_bind_address: 0.0.0.0
 nomad_iface: eth0
 nomad_ports_http: 4646
 nomad_ports_rpc: 4647

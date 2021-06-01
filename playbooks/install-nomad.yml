@@ -7,12 +7,13 @@
   pre_tasks:
     - name: update cache
       apt:
-        update_cache: yes
+        update_cache: true
 
     - name: Install ansible roles
       command: "ansible-galaxy install -r {{ playbook_dir }}/requirements.yml --roles-path {{ playbook_dir }}/roles"
       delegate_to: '127.0.0.1'
       become: false
+      changed_when: false
 
   tasks:
     - name: Install Consul (required for connect)
@@ -49,4 +50,4 @@
       service:
         name: nomad
         state: started
-        enabled: yes
+        enabled: true
