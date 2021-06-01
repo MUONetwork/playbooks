@@ -1,0 +1,8 @@
+{% for zone in pve_vxlan_zones %}
+vxlan: {{ zone.name }}
+       peers {{ zone.peers }}
+       ipam {{ zone.ipam }}
+       mtu {{ zone.mtu }}
+       nodes {{ zone.nodes }}
+
+{% endfor %}

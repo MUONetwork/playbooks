@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+## Ansible specific ignores
+roles/
+fetch/
+.vault_password
+
+# Editor specific ignores
+.idea/

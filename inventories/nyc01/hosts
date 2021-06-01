@@ -1,0 +1,24 @@
+[hypervisors]
+pve01.cuspuo.internal ansible_host=192.168.0.4
+pve02.cuspuo.internal ansible_host=192.168.0.6
+
+;[all_uohosts]
+;uohost-01.phoenixdc.sharmamohit.com ansible_host=192.168.41.39
+;uohost-02.phoenixdc.sharmamohit.com ansible_host=192.168.41.40
+;uohost-03.phoenixdc.sharmamohit.com ansible_host=192.168.41.41
+;
+;[k8s:children]
+;all_uohosts
+;
+;[k8s_masters]
+;uohost-01.phoenixdc.sharmamohit.com
+;
+;[k8s_etcd]
+;uohost-01.phoenixdc.sharmamohit.com
+;
+;[k8s_workers]
+;uohost-02.phoenixdc.sharmamohit.com
+;uohost-03.phoenixdc.sharmamohit.com
+;
+;[nomad:children]
+;all_uohosts
