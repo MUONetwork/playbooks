@@ -1,0 +1,10 @@
+exclude_paths:
+  - playbooks/requirements.yml
+  - playbooks/roles
+  - .github
+
+skip_list:
+  - risky-file-permissions
+
+warn_list:
+  - command-instead-of-module
