@@ -1,2 +1,3 @@
 ansible==2.9.9
 ansible-lint==5.0.2
+docker==4.4.4
