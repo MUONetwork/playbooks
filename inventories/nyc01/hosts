@@ -2,6 +2,12 @@
 pve01.cuspuo.internal ansible_host=192.168.0.4
 pve02.cuspuo.internal ansible_host=192.168.0.6
 
+[storage]
+luna.cuspuo.internal ansible_host=192.168.0.2 ansible_python_interpreter=/usr/local/bin/python3
+
+;[test]
+;uohost-01.phoenixdc.sharmamohit.com ansible_host=192.168.41.39 ansible_user=administrator
+
 ;[all_uohosts]
 ;uohost-01.phoenixdc.sharmamohit.com ansible_host=192.168.41.39
 ;uohost-02.phoenixdc.sharmamohit.com ansible_host=192.168.41.40
