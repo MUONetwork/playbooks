@@ -1,0 +1,15 @@
+---
+
+- hosts: storage
+  gather_facts: true
+
+  tasks:
+    - name: Install pip
+      include: tasks/install_pip_on_synology.yml
+      when:
+        - ansible_os_family == "OtherLinux"
+        - ansible_system_vendor == "Synology Inc."
+
+    - name: Install pip packages
+      pip:
+        name: "{{ pip_packages }}"
