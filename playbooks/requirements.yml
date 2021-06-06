@@ -14,3 +14,8 @@
   scm: git
   version: master
   name: lae.proxmox
+
+- src: https://github.com/geerlingguy/ansible-role-pip.git
+  scm: git
+  version: master
+  name: geerlingguy.pip

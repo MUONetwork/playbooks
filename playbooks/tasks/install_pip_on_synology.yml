@@ -1,0 +1,43 @@
+---
+
+- name: Install pip
+  block:
+    - name: Check if pip is installed
+      stat:
+        path: /usr/bin/pip
+      register: pipstat
+
+    - name: Download pip
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /tmp/get-pip.py
+      when: not pipstat.stat.exists
+
+    - name: Install pip
+      command: /usr/local/bin/python3 /tmp/get-pip.py
+      when: not pipstat.stat.exists
+
+    - name: Create symlink for pip
+      file:
+        src: /var/services/homes/mohitsharma44/.local/bin/pip3
+        dest: "{{ item }}"
+        state: link
+      with_items:
+        - /usr/bin/pip
+        - /usr/bin/pip3
+      become: true
+      when: not pipstat.stat.exists
+
+- name: Make sure /var/services/homes/mohitsharma44/.local/bin is in PATH
+  block:
+    - name: Check if /var/services/homes/mohitsharma44/.local/bin exists in PATH
+      shell: grep -c "^export PATH=$PATH:/var/services/homes/mohitsharma44/.local/bin" /etc/profile || true
+      register: test_grep
+      changed_when: false
+
+    - name: Add /var/services/homes/mohitsharma44/.local/bin to PATH
+      lineinfile:
+        dest: /etc/profile
+        line: export PATH=$PATH:/var/services/homes/mohitsharma44/.local/bin
+      when: test_grep.stdout == "0"
+  become: true

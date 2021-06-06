@@ -1,0 +1,12 @@
+---
+
+ansible_user: mohitsharma44
+pip_packages:
+  - docker
+  - PyYAML
+  - docker-compose
+
+path_to_vhostd: /volume2/nginx_configs/vhost.d
+path_to_dockersock: /var/run/docker.sock
+path_to_sslcerts: /volume2/nginx_configs/certs
+path_to_dockercomposefiles: /volume2/docker_compose_files
