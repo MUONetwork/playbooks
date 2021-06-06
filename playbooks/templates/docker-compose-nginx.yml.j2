@@ -1,0 +1,21 @@
+---
+version: '3.5'
+
+services:
+  nginxproxy:
+    image: "nginxproxy/nginx-proxy:0.9-alpine"
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - nginx
+    volumes:
+      - {{ path_to_vhostd }}:/etc/nginx/vhost.d:ro
+      - {{ path_to_dockersock }}:/tmp/docker.sock:ro
+      - {{ path_to_sslcerts }}:/etc/nginx/certs
+    restart: on-failure:5
+
+
+networks:
+  nginx:
+    attachable: true
