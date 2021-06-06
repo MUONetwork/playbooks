@@ -1,0 +1,57 @@
+---
+version: '3.9'
+
+services:
+  mariadb:
+    image: mariadb:10.6.1-focal
+    volumes:
+      - mariadb_keycloak:/var/lib/mysql
+    networks:
+      - keycloak-net
+    environment:
+      - MYSQL_ROOT_PASSWORD={{ mariadb_keycloak_root_password }}
+      - MYSQL_DATABASE={{ keycloak_db_name }}
+      - MYSQL_USER={{ keycloak_db_user }}
+      - MYSQL_PASSWORD={{ keycloak_db_password }}
+    restart: on-failure:5
+
+  keycloak:
+    image: jboss/keycloak:13.0.1
+    depends_on:
+      - mariadb
+    expose:
+      - "8080"
+      - "8443"
+    # ports:
+    #  - 8080:8080
+    #  - 8443:8443
+    networks:
+      - keycloak-net
+      - nginx
+    environment:
+      - DB_VENDOR=mariadb
+      - DB_USER={{ keycloak_db_user }}
+      - DB_PASSWORD={{ keycloak_db_password }}
+      # This should only be needed the first time keycloak is initialized
+      # BUG: https://issues.redhat.com/browse/KEYCLOAK-13094
+      # - KEYCLOAK_USER={{ keycloak_admin_user }}
+      # - KEYCLOAK_PASSWORD={{ keycloak_admin_password }}
+      - PROXY_ADDRESS_FORWARDING=true
+      - VIRTUAL_HOST={{ keycloak_fqdn }}
+      - VIRTUAL_PROTO=https
+      - VIRTUAL_PORT=8443
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-k", "https://localhost:8443/auth/realms/master"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: on-failure:5
+
+volumes:
+  mariadb_keycloak:
+
+networks:
+  keycloak-net:
+  nginx:
+    external: true
+    name: nginx_nginx

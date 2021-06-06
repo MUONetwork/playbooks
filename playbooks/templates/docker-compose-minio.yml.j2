@@ -1,0 +1,69 @@
+---
+version: '3.5'
+
+services:
+  etcd1:
+    image: bitnami/etcd:3.4.16
+    hostname: etcd1
+    expose:
+      - "2379"
+    # ports:
+    #  - 2379:2379
+    #  - 2380:2380
+    networks:
+      - etcd-net
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_NAME=etcd1
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd1:2380
+      - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_INITIAL_CLUSTER_TOKEN={{ etcd_initial_cluster_token }}
+      - ETCD_INITIAL_CLUSTER=etcd1=http://etcd1:2380
+      - ETCD_INITIAL_CLUSTER_STATE=new
+    volumes:
+      - etcd1:/bitnami/etcd
+    deploy:
+      replicas: 1
+    restart: on-failure:5
+
+  minio1:
+    image: minio/minio:RELEASE.2021-05-27T22-06-31Z
+    hostname: minio1
+    volumes:
+      - /volume2/docker_compose_files:/shares/docker_compose_files
+      - /volume2/ProxmoxDataStore:/shares/ProxmoxDataStore
+      - /volume2/ISO-images:/shares/ISO-images
+    expose:
+      - "9000"
+    # ports:
+    # - 7010:9000
+    networks:
+      - etcd-net
+      - nginx
+    environment:
+      - MINIO_ROOT_USER={{ minio_root_user }}
+      - MINIO_ROOT_PASSWORD={{ minio_root_password }}
+      - MINIO_ETCD_ENDPOINTS=http://etcd1:2379
+      - MINIO_IDENTITY_OPENID_CONFIG_URL=https://identity01.nyc01.cuspuo.org/auth/realms/master/.well-known/openid-configuration
+      - MINIO_IDENTITY_OPENID_CLIENT_ID=minio
+      - VIRTUAL_HOST={{ minio_fqdn }}
+      - VIRTUAL_PROTO=http
+      - VIRTUAL_PORT=9000
+    command: gateway nas /shares
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: on-failure:5
+
+volumes:
+  etcd1:
+
+networks:
+  etcd-net:
+  nginx:
+    external: true
+    name: nginx_nginx

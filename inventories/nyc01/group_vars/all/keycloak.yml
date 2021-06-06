@@ -1,0 +1,4 @@
+keycloak_fqdn: "identity.nyc01.cuspuo.org"
+keycloak_db_name: "keycloak"
+keycloak_db_user: "mohitsharma44"
+keycloak_admin_user: "mohitsharma44"

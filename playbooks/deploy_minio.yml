@@ -1,0 +1,69 @@
+---
+
+- name: Generate SSL certs
+  import_playbook: generate_ssl_certs.yml
+  vars:
+    fqdn: "{{ minio_fqdn }}"
+
+- hosts: storage
+  gather_facts: true
+
+  tasks:
+    - name: Copy nginx host config if exists
+      block:
+        - name: Check for minio config file for nginx
+          stat:
+            path: "{{ lookup('first_found', 'vhost.d/minio.conf', errors='ignore') }}"
+          delegate_to: 127.0.0.1
+          register: minio_nginx_conf
+        - name: Copy the minio config file for nginx
+          copy:
+            src: "{{ lookup('first_found', 'vhost.d/minio.conf', errors='ignore') }}"
+            dest: "{{ path_to_vhostd }}/{{ minio_fqdn }}"
+          when: minio_nginx_conf.stat.exists
+          become: true
+
+    - name: Copy SSL cert and key
+      block:
+        - name: Find ssl cert and key for {{ minio_fqdn }}
+          find:
+            paths: "{{ ler53_account_key_dir }}/certs/"
+            file_type: file
+            patterns:
+              - "{{ minio_fqdn }}.*"
+            recurse: true
+            depth: 2
+          register: ssl_cert_and_key
+          delegate_to: 127.0.0.1
+        - name: Copy SSL cert and key
+          copy:
+            src: "{{ item.path }}"
+            dest: "{{ path_to_sslcerts }}/{{ item.path | basename }}"
+            decrypt: true
+            backup: false
+          with_items: "{{ ssl_cert_and_key.files | flatten(levels=1) }}"
+          become: true
+
+    - name: Deploy Minio
+      block:
+        - name: Create destionation directory
+          file:
+            path: /volume2/docker_compose_files/minio
+            state: directory
+            mode: '0755'
+          become: true
+        - name: Copy docker-compose file to remote host
+          template:
+            src: "{{ playbook_dir }}/templates/docker-compose-minio.yml.j2"
+            dest: "{{ path_to_dockercomposefiles }}/minio/docker-compose.yml"
+            mode: 0640
+            owner: mohitsharma44
+            group: administrators
+          become: true
+        - name: Deploy minio stack
+          docker_compose:
+            project_src: "/volume2/docker_compose_files/minio/"
+            files:
+              - docker-compose.yml
+            restarted: true
+            remove_orphans: true

@@ -1,0 +1,14 @@
+---
+
+# Lets encrypt config for role ansible-role-lets-encrypt-route-53
+ler53_aws_access_key: AKIA5DTOK7YMIOKKLN52
+# ler53_acme_directory: https://acme-staging-v02.api.letsencrypt.org/directory
+ler53_acme_directory: https://acme-v02.api.letsencrypt.org/directory
+ler53_cert_dir: "{{ playbook_dir }}/files/letsencrypt/certs"
+ler53_account_key_dir: "{{ playbook_dir }}/files/letsencrypt"
+ler53_account_key_size: 4096
+ler53_account_email: mohitsharma44@gmail.com
+ler53_cert_files_owner: mohitsharma44
+ler53_cert_files_group: staff
+ler53_route_53_domain: cuspuo.org
+ler53_cert_remaining_days_before_renewal: 14

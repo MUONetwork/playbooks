@@ -1,0 +1,92 @@
+---
+
+- hosts: storage
+  gather_facts: true
+
+  tasks:
+    - name: Create directories if they dont exist
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      with_items:
+        - "{{ path_to_vhostd }}"
+        - "{{ path_to_sslcerts }}"
+        - "{{ path_to_dockercomposefiles }}"
+
+      become: true
+
+    - name: Free up port 80 and 443 on {{ ansible_host }}
+      block:
+        - name: Free up port 80 on {{ ansible_host }}
+          replace:
+            path: "{{ item }}"
+            regexp: "((?<=listen )(?<=\\[::\\]:))?80"
+            replace: "81"
+            backup: true
+          with_items:
+            - '/usr/syno/share/nginx/server.mustache'
+            - '/usr/syno/share/nginx/DSM.mustache'
+            - '/usr/syno/share/nginx/WWWService.mustache'
+          register: conf_80
+          notify: Restart nginx
+
+        - name: Free up port 443 on {{ ansible_host }}
+          replace:
+            path: "{{ item }}"
+            regexp: "((?<=listen )(?<=\\[::\\]:))?443"
+            replace: "444"
+            backup: true
+          with_items:
+            - '/usr/syno/share/nginx/server.mustache'
+            - '/usr/syno/share/nginx/DSM.mustache'
+            - '/usr/syno/share/nginx/WWWService.mustache'
+          register: conf_443
+          notify: Restart nginx
+      when:
+        - ansible_os_family == "OtherLinux"
+        - ansible_system_vendor == "Synology Inc."
+      become: true
+
+    - name: Stop and Disable Synology's Web Station on {{ ansible_host }}
+      block:
+        - name: Stop Web Station
+          command: "/usr/syno/sbin/synoservice --stop pkgctl-WebStation"
+          notify: Restart nginx
+        - name: Disable Web Station
+          command: "/usr/syno/sbin/synoservice --disable pkgctl-WebStation"
+          notify: Restart nginx
+      when: conf_80.changed or conf_443.changed
+      become: true
+
+    - name: Flush handlers
+      meta: flush_handlers
+
+    - name: Deploy Nginx on {{ ansible_host }}
+      block:
+        - name: Create destionation directory
+          file:
+            path: /volume2/docker_compose_files/nginx
+            state: directory
+            mode: '0755'
+          become: true
+        - name: Copy docker-compose file to remote host
+          template:
+            src: "{{ playbook_dir }}/templates/docker-compose-nginx.yml.j2"
+            dest: "{{ path_to_dockercomposefiles }}/nginx/docker-compose.yml"
+            mode: 0640
+            owner: mohitsharma44
+            group: administrators
+          become: true
+        - name: Deploy nginx stack
+          docker_compose:
+            project_src: "{{ path_to_dockercomposefiles }}/nginx/"
+            files:
+              - docker-compose.yml
+            remove_orphans: true
+
+  handlers:
+    - name: Restart nginx
+      command: "/usr/syno/sbin/synoservice --restart nginx"
+      when: conf_80.changed or conf_443.changed
+      become: true
