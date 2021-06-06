@@ -87,6 +87,8 @@
       apt:
         name: "{{ sdn_dependencies }}"
         state: present
+      register: sdn_dependencies_install
+      notify: Reboot servers
 
     - name: Source all network interfaces
       block:
@@ -113,10 +115,12 @@
         # Creating empty zone and vnets is necessary else we get error when copying template
         - name: Create an empty zone file (if required)
           block:
-            - stat:
+            - name: Check if SDN zones config file exists
+              stat:
                 path: /etc/pve/sdn/zones.cfg
               register: zone_file
-            - file:
+            - name: Create SDN zones config file
+              file:
                 path: /etc/pve/sdn/zones.cfg
                 state: touch
                 owner: root
@@ -124,12 +128,15 @@
               when:
                 - zone_file.stat.exists is defined
                 - not zone_file.stat.exists
+
         - name: Create an empty vnets file (if required)
           block:
-            - stat:
+            - name: Check if VNets config file exists
+              stat:
                 path: /etc/pve/sdn/vnets.cfg
               register: vnets_file
-            - file:
+            - name: Create VNets config file
+              file:
                 path: /etc/pve/sdn/vnets.cfg
                 state: touch
                 owner: root
@@ -138,7 +145,7 @@
                 - vnets_file.stat.exists is defined
                 - not vnets_file.stat.exists
 
-        - name: Generate Zones
+        - name: Generate Zones config
           template:
             src: "{{ playbook_dir }}/templates/hypervisor_vxlan_zones.cfg.j2"
             dest: "/etc/pve/sdn/zones.cfg"
@@ -147,7 +154,7 @@
             group: www-data
           register: zone_template
 
-        - name: Generate VNets
+        - name: Generate VNets config
           template:
             src: "{{ playbook_dir }}/templates/hypervisor_vxlan_vnets.cfg.j2"
             dest: "/etc/pve/sdn/vnets.cfg"
@@ -169,3 +176,8 @@
       service:
         name: pveproxy
         state: restarted
+
+    - name: Reboot servers
+      reboot:
+        reboot_timeout: 600
+      when: sdn_dependencies_install.changed

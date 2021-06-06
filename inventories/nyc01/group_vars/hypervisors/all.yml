@@ -51,17 +51,71 @@ pve_vxlan_zones:
     ipam: pve
     mtu: 1450  # we need to leave 50 bytes for vxlan header
     nodes: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_hostname']) | join(',') }}"
+  - name: myvxlan4
+    peers: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
+    ipam: pve
+    mtu: 1450  # we need to leave 50 bytes for vxlan header
+    nodes: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_hostname']) | join(',') }}"
+  - name: myvxlan5
+    peers: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
+    ipam: pve
+    mtu: 1450  # we need to leave 50 bytes for vxlan header
+    nodes: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_hostname']) | join(',') }}"
+  - name: myvxlan6
+    peers: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
+    ipam: pve
+    mtu: 1450  # we need to leave 50 bytes for vxlan header
+    nodes: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_hostname']) | join(',') }}"
+  - name: myvxlan7
+    peers: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
+    ipam: pve
+    mtu: 1450  # we need to leave 50 bytes for vxlan header
+    nodes: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_hostname']) | join(',') }}"
+  - name: myvxlan8
+    peers: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
+    ipam: pve
+    mtu: 1450  # we need to leave 50 bytes for vxlan header
+    nodes: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_hostname']) | join(',') }}"
+  - name: myvxlan9
+    peers: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | join(',') }}"
+    ipam: pve
+    mtu: 1450  # we need to leave 50 bytes for vxlan header
+    nodes: "{{ groups['hypervisors'] | map('extract', hostvars, ['ansible_hostname']) | join(',') }}"
 
 pve_vnets:
   - name: vnet01
     zone: myvxlan1
     alias: vnet01
-    tag: 20000
+    tag: 10000
   - name: vnet02
     zone: myvxlan2
     alias: vnet02
-    tag: 30000
+    tag: 20000
   - name: vnet03
     zone: myvxlan3
     alias: vnet03
+    tag: 30000
+  - name: vnet04
+    zone: myvxlan4
+    alias: vnet04
     tag: 40000
+  - name: vnet05
+    zone: myvxlan5
+    alias: vnet05
+    tag: 50000
+  - name: vnet06
+    zone: myvxlan6
+    alias: vnet06
+    tag: 60000
+  - name: vnet07
+    zone: myvxlan7
+    alias: vnet07
+    tag: 70000
+  - name: vnet08
+    zone: myvxlan8
+    alias: vnet08
+    tag: 80000
+  - name: vnet09
+    zone: myvxlan9
+    alias: vnet09
+    tag: 90000
