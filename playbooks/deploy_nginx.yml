@@ -1,6 +1,5 @@
 ---
 
-# - hosts: test
 - hosts: storage
   gather_facts: true
 
@@ -30,6 +29,7 @@
             - '/usr/syno/share/nginx/DSM.mustache'
             - '/usr/syno/share/nginx/WWWService.mustache'
           register: conf_80
+          notify: Restart nginx
 
         - name: Free up port 443 on {{ ansible_host }}
           replace:
@@ -42,6 +42,7 @@
             - '/usr/syno/share/nginx/DSM.mustache'
             - '/usr/syno/share/nginx/WWWService.mustache'
           register: conf_443
+          notify: Restart nginx
       when:
         - ansible_os_family == "OtherLinux"
         - ansible_system_vendor == "Synology Inc."
@@ -51,15 +52,15 @@
       block:
         - name: Stop Web Station
           command: "/usr/syno/sbin/synoservice --stop pkgctl-WebStation"
+          notify: Restart nginx
         - name: Disable Web Station
           command: "/usr/syno/sbin/synoservice --disable pkgctl-WebStation"
+          notify: Restart nginx
       when: conf_80.changed or conf_443.changed
       become: true
 
-    - name: Restart Synology's nginx on {{ ansible_host }}
-      command: "/usr/syno/sbin/synoservice --restart nginx"
-      when: conf_80.changed or conf_443.changed
-      become: true
+    - name: Flush handlers
+      meta: flush_handlers
 
     - name: Deploy Nginx on {{ ansible_host }}
       block:
@@ -84,3 +85,8 @@
               - docker-compose.yml
             remove_orphans: true
 
+  handlers:
+    - name: Restart nginx
+      command: "/usr/syno/sbin/synoservice --restart nginx"
+      when: conf_80.changed or conf_443.changed
+      become: true

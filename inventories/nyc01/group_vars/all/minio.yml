@@ -1,0 +1,4 @@
+---
+
+minio_fqdn: "storage01.nyc01.cuspuo.org"
+minio_root_user: minio
