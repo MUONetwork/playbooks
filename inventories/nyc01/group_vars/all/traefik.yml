@@ -1,0 +1,8 @@
+---
+
+# Lets encrypt config for Traefik
+le_aws_access_key: AKIA5DTOK7YMIOKKLN52
+#le_acme_directory: https://acme-staging-v02.api.letsencrypt.org/directory
+le_acme_directory: https://acme-v02.api.letsencrypt.org/directory
+le_account_email: mohitsharma44@gmail.com
+le_route_53_domain: nyc01.cuspuo.org
