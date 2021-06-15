@@ -17,6 +17,7 @@ services:
 
   keycloak:
     image: jboss/keycloak:13.0.1
+    container_name: keycloak
     depends_on:
       - mariadb
     expose:
@@ -27,7 +28,7 @@ services:
     #  - 8443:8443
     networks:
       - keycloak-net
-      - nginx
+      - traefik-public
     environment:
       - DB_VENDOR=mariadb
       - DB_USER={{ keycloak_db_user }}
@@ -37,9 +38,20 @@ services:
       # - KEYCLOAK_USER={{ keycloak_admin_user }}
       # - KEYCLOAK_PASSWORD={{ keycloak_admin_password }}
       - PROXY_ADDRESS_FORWARDING=true
-      - VIRTUAL_HOST={{ keycloak_fqdn }}
-      - VIRTUAL_PROTO=https
-      - VIRTUAL_PORT=8443
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.service=keycloak"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+      # default route over https
+      - "traefik.http.routers.keycloak.rule=Host(`identity.{{ le_route_53_domain }}`)"
+      - "traefik.http.routers.keycloak.entrypoints=https"
+      - "traefik.http.routers.keycloak.tls.certresolver=route53"
+      - "traefik.http.routers.keycloak.tls=true"
+      # HTTP to HTTPS
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.keycloak-redirs.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.keycloak-redirs.entrypoints=http"
+      - "traefik.http.routers.keycloak-redirs.middlewares=redirect-to-https"
     healthcheck:
       test: ["CMD", "curl", "-f", "-k", "https://localhost:8443/auth/realms/master"]
       interval: 30s
@@ -52,6 +64,6 @@ volumes:
 
 networks:
   keycloak-net:
-  nginx:
+  traefik-public:
     external: true
-    name: nginx_nginx
+    name: traefik-public

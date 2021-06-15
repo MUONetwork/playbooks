@@ -31,6 +31,7 @@ services:
   minio1:
     image: minio/minio:RELEASE.2021-05-27T22-06-31Z
     hostname: minio1
+    container_name: minio1
     volumes:
       - /volume2/docker_compose_files:/shares/docker_compose_files
       - /volume2/ProxmoxDataStore:/shares/ProxmoxDataStore
@@ -41,16 +42,27 @@ services:
     # - 7010:9000
     networks:
       - etcd-net
-      - nginx
+      - traefik-public
     environment:
       - MINIO_ROOT_USER={{ minio_root_user }}
       - MINIO_ROOT_PASSWORD={{ minio_root_password }}
       - MINIO_ETCD_ENDPOINTS=http://etcd1:2379
-      - MINIO_IDENTITY_OPENID_CONFIG_URL=https://identity01.nyc01.cuspuo.org/auth/realms/master/.well-known/openid-configuration
+      - MINIO_IDENTITY_OPENID_CONFIG_URL=https://identity.nyc01.cuspuo.org/auth/realms/master/.well-known/openid-configuration
       - MINIO_IDENTITY_OPENID_CLIENT_ID=minio
-      - VIRTUAL_HOST={{ minio_fqdn }}
-      - VIRTUAL_PROTO=http
-      - VIRTUAL_PORT=9000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.minio1.service=minio1"
+      - "traefik.http.services.minio1.loadbalancer.server.port=9000"
+      # default route over https
+      - "traefik.http.routers.minio1.rule=Host(`storage01.{{ le_route_53_domain }}`)"
+      - "traefik.http.routers.minio1.entrypoints=https"
+      - "traefik.http.routers.minio1.tls.certresolver=route53"
+      - "traefik.http.routers.minio1.tls=true"
+      # HTTP to HTTPS
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.minio-redirs.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.minio-redirs.entrypoints=http"
+      - "traefik.http.routers.minio-redirs.middlewares=redirect-to-https"
     command: gateway nas /shares
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -64,6 +76,6 @@ volumes:
 
 networks:
   etcd-net:
-  nginx:
+  traefik-public:
     external: true
-    name: nginx_nginx
+    name: traefik-public

@@ -10,10 +10,8 @@
         state: directory
         mode: '0755'
       with_items:
-        - "{{ path_to_vhostd }}"
         - "{{ path_to_sslcerts }}"
         - "{{ path_to_dockercomposefiles }}"
-
       become: true
 
     - name: Free up port 80 and 443 on {{ ansible_host }}
@@ -62,28 +60,29 @@
     - name: Flush handlers
       meta: flush_handlers
 
-    - name: Deploy Nginx on {{ ansible_host }}
+    - name: Deploy Traefik on {{ ansible_host }}
       block:
         - name: Create destionation directory
           file:
-            path: /volume2/docker_compose_files/nginx
+            path: /volume2/docker_compose_files/traefik
             state: directory
             mode: '0755'
           become: true
         - name: Copy docker-compose file to remote host
           template:
-            src: "{{ playbook_dir }}/templates/docker-compose-nginx.yml.j2"
-            dest: "{{ path_to_dockercomposefiles }}/nginx/docker-compose.yml"
+            src: "{{ playbook_dir }}/templates/docker-compose-traefik.yml.j2"
+            dest: "{{ path_to_dockercomposefiles }}/traefik/docker-compose.yml"
             mode: 0640
             owner: mohitsharma44
             group: administrators
           become: true
-        - name: Deploy nginx stack
+        - name: Deploy traefik
           docker_compose:
-            project_src: "{{ path_to_dockercomposefiles }}/nginx/"
+            project_src: "{{ path_to_dockercomposefiles }}/traefik/"
             files:
               - docker-compose.yml
             remove_orphans: true
+            restarted: true
 
   handlers:
     - name: Restart nginx

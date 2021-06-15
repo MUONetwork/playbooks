@@ -1,0 +1,59 @@
+---
+
+services:
+  traefik:
+    image: traefik:2.4.8
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - --api.insecure=true
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=traefik-public
+      - --log.level=INFO
+      - --entrypoints.http.address=:80
+      - --entrypoints.https.address=:443
+      - --certificatesresolvers.route53.acme.dnschallenge=true
+      - --certificatesresolvers.route53.acme.dnschallenge.provider=route53
+      - --certificatesresolvers.route53.acme.dnschallenge.delayBeforeCheck=0
+      - --certificatesresolvers.route53.acme.dnschallenge.disablepropagationcheck=true
+      - --certificatesresolvers.route53.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+      - --certificatesresolvers.route53.acme.email={{ le_account_email }}
+      - --certificatesresolvers.route53.acme.storage=/certs/acme.json
+      - --certificatesresolvers.route53.acme.caserver={{ le_acme_directory }}
+    environment:
+      - TZ=America/New_York
+      - AWS_ACCESS_KEY_ID={{ le_aws_access_key }}
+      - AWS_REGION=us-east-1
+      - AWS_SECRET_ACCESS_KEY={{ le_aws_secret_key }}
+      - AWS_HOSTED_ZONE_ID={{ le_aws_hosted_zone_id }}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=http"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.api.rule=Host(`traefik.{{ le_route_53_domain }}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.api.entrypoints=https"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
+      - "traefik.http.routers.api.tls.certresolver=route53"
+      - "traefik.http.routers.api.tls.domains[0].main={{ le_route_53_domain }}"
+      - "traefik.http.routers.api.tls.domains[0].sans=*.{{ le_route_53_domain }}"
+    networks:
+      - traefik-public
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - {{ path_to_dockersock }}:/var/run/docker.sock:ro
+      - {{ path_to_sslcerts }}:/certs
+
+volumes:
+  certs:
+
+networks:
+  traefik-public:
+    name: traefik-public

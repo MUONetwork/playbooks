@@ -1,54 +1,14 @@
 ---
 
-- name: Generate SSL certs
-  import_playbook: generate_ssl_certs.yml
-  vars:
-    fqdn: "{{ keycloak_fqdn }}"
-
 - hosts: storage
   gather_facts: true
 
   tasks:
-    - name: Copy nginx host config if exists
-      block:
-        - name: Check for keycloak config file for nginx
-          stat:
-            path: "{{ lookup('first_found', 'vhost.d/keycloak.conf', errors='ignore') }}"
-          delegate_to: 127.0.0.1
-          register: keycloak_nginx_conf
-        - name: Copy the keycloak config file for nginx
-          copy:
-            src: "{{ lookup('first_found', 'vhost.d/keycloak.conf', errors='ignore') }}"
-            dest: "{{ path_to_vhostd }}/{{ keycloak_fqdn }}"
-          when: keycloak_nginx_conf.stat.exists
-          become: true
-
-    - name: Copy SSL cert and key
-      block:
-        - name: Find ssl cert and key for {{ keycloak_fqdn }}
-          find:
-            paths: "{{ ler53_account_key_dir }}/certs/"
-            file_type: file
-            patterns:
-              - "{{ keycloak_fqdn }}.*"
-            recurse: true
-            depth: 2
-          register: ssl_cert_and_key
-          delegate_to: 127.0.0.1
-        - name: Copy SSL cert and key
-          copy:
-            src: "{{ item.path }}"
-            dest: "{{ path_to_sslcerts }}/{{ item.path | basename }}"
-            decrypt: true
-            backup: false
-          with_items: "{{ ssl_cert_and_key.files | flatten(levels=1) }}"
-          become: true
-
     - name: Deploy keycloak
       block:
         - name: Create destionation directory
           file:
-            path: /volume2/docker_compose_files/keycloak
+            path: "{{ path_to_dockercomposefiles }}/keycloak"
             state: directory
             mode: '0755'
           become: true
@@ -62,7 +22,7 @@
           become: true
         - name: Deploy keycloak stack
           docker_compose:
-            project_src: "/volume2/docker_compose_files/keycloak/"
+            project_src: "{{ path_to_dockercomposefiles }}/keycloak/"
             files:
               - docker-compose.yml
             restarted: true
