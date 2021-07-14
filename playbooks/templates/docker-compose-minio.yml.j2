@@ -33,9 +33,11 @@ services:
     hostname: minio1
     container_name: minio1
     volumes:
-      - /volume2/docker_compose_files:/shares/docker_compose_files
-      - /volume2/ProxmoxDataStore:/shares/ProxmoxDataStore
-      - /volume2/ISO-images:/shares/ISO-images
+      - /volume3/55TB-backup:/shares/55TB-backup:ro
+      - /volume7/Audubon:/shares/Audubon:ro
+      - /volume6/BB:/shares/BB:ro
+      - /volume4/HSI:/shares/HSI:ro
+      - /volume5/HTI:/shares/HTI:ro
     expose:
       - "9000"
     # ports:
@@ -47,8 +49,8 @@ services:
       - MINIO_ROOT_USER={{ minio_root_user }}
       - MINIO_ROOT_PASSWORD={{ minio_root_password }}
       - MINIO_ETCD_ENDPOINTS=http://etcd1:2379
-      - MINIO_IDENTITY_OPENID_CONFIG_URL=https://identity.nyc01.cuspuo.org/auth/realms/master/.well-known/openid-configuration
-      - MINIO_IDENTITY_OPENID_CLIENT_ID=minio
+      - MINIO_IDENTITY_OPENID_CONFIG_URL=https://identity.nyc01.cuspuo.org/auth/realms/UO/.well-known/openid-configuration
+      - MINIO_IDENTITY_OPENID_CLIENT_ID=storage
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.minio1.service=minio1"
